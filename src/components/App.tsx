@@ -80,21 +80,31 @@ export default function App() {
     registerServiceWorker();
 
     let cancelled = false;
-    void hydrate(local).then((res) => {
+    void hydrate(local).then(async (res) => {
       if (cancelled) return;
       setData(res.data);
       setOnline(res.online);
       setUserId(res.userId);
+      // Flush any pending sessions (e.g. freshly seeded, or logged while
+      // offline) as soon as we're online — app open is a sync point.
+      if (res.online && res.data.sessions.some((s) => s.pendingSync)) {
+        const next = await flushPending(res.data);
+        if (!cancelled) setData(next);
+      }
     });
 
     const unsub = onAuthChange((uid) => {
       setUserId(uid);
       if (uid) {
         setOfflineMode(false);
-        void hydrate(dataRef.current).then((res) => {
+        void hydrate(dataRef.current).then(async (res) => {
           setData(res.data);
           setOnline(res.online);
           setUserId(res.userId);
+          if (res.online && res.data.sessions.some((s) => s.pendingSync)) {
+            const next = await flushPending(res.data);
+            setData(next);
+          }
         });
       }
     });
