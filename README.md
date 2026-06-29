@@ -1,36 +1,59 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Workout Tracker
 
-## Getting Started
+A mobile-first, offline-first **PWA** workout tracker for a single user. Its one job: between sets at the gym, instantly show last session's numbers for the current exercise so you know what to beat (progressive overload).
 
-First, run the development server:
+**Live:** https://progressload.vercel.app
+
+## How it works
+
+- **Local-first.** All reads/writes during a workout hit local React state + `localStorage` first — the "last time" lookup never depends on the network (works in a no-signal gym basement).
+- **Supabase is sync + durable backup.** On open, hydrate from Supabase and merge by `updatedAt` (last-write-wins). On each change, best-effort `upsert`; if offline, mark `pendingSync` and flush on reconnect.
+- **Double progression hint.** Stay at a weight and add reps each week until every working set hits the top of the rep range, then add weight. See `src/lib/progression.ts`.
+
+## Stack
+
+Next.js 15 (App Router, client-rendered logging path) · TypeScript · Tailwind v4 · Supabase (Postgres + magic-link Auth) · `localStorage` · hand-rolled service worker + web manifest. Deployed on Vercel.
+
+## Local development
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
+pnpm install
+cp .env.example .env.local   # fill in your Supabase URL + anon key
 pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Env vars:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+The app is fully usable without Supabase configured (offline mode with seed data) — auth/sync just no-op.
 
-## Learn More
+## Database
 
-To learn more about Next.js, take a look at the following resources:
+One table (`sessions`) with row-level security keyed to `auth.uid()`. Apply the migration to your Supabase Postgres:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+psql "$POSTGRES_URL_NON_POOLING" -f supabase/migrations/0001_init.sql
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Templates and exercises are hardcoded config (`src/config/templates.ts`) — editing that file changes the routine; there is no in-app creation UI by design.
 
-## Deploy on Vercel
+## Auth note
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Magic-link sign-in requires the production URL in Supabase → Authentication → URL Configuration:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- **Site URL:** `https://progressload.vercel.app`
+- **Redirect URLs:** `https://progressload.vercel.app/**`
+
+## Tests
+
+```bash
+pnpm test    # vitest — progression logic (the core)
+```
+
+## Scripts
+
+- `pnpm dev` / `pnpm build` / `pnpm start`
+- `pnpm test` / `pnpm test:watch`
+- `pnpm lint`
