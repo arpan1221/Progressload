@@ -1,0 +1,66 @@
+@import "tailwindcss";
+
+/* Always dark, mobile-first. */
+:root {
+  --background: #0a0a0a;
+  --surface: #141414;
+  --surface-2: #1c1c1c;
+  --border: #2a2a2a;
+  --foreground: #ededed;
+  --muted: #9a9a9a;
+  --accent: #3b82f6;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-border: var(--border);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+}
+
+html {
+  color-scheme: dark;
+  /* Prevent pull-to-refresh / overscroll glow on mobile during logging. */
+  overscroll-behavior-y: none;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial,
+    sans-serif;
+  /* Safe-area aware padding so notch/home-indicator never clips content. */
+  min-height: 100dvh;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Disable text selection on tap targets for a native-app feel. */
+button {
+  -webkit-user-select: none;
+  user-select: none;
+  touch-action: manipulation;
+}
+
+/* Safe-area helpers. */
+.safe-top {
+  padding-top: max(env(safe-area-inset-top), 0.75rem);
+}
+.safe-bottom {
+  padding-bottom: max(env(safe-area-inset-bottom), 0.75rem);
+}
+.safe-x {
+  padding-left: max(env(safe-area-inset-left), 1rem);
+  padding-right: max(env(safe-area-inset-right), 1rem);
+}
+
+/* Hide number-input spinners if ever used. */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
